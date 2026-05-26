@@ -41,10 +41,18 @@
     - grafana_manage_repo
 
 - block:
+    - name: Ensure APT keyrings directory exists [Debian/Ubuntu]
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
     - name: Import Grafana GPG signing key [Debian/Ubuntu]
-      apt_key:
+      get_url:
         url: "https://packages.grafana.com/gpg.key"
-        state: present
+        dest: /etc/apt/keyrings/grafana.asc
+        mode: "0644"
+        force: true
         validate_certs: false
       register: _add_apt_key
       until: _add_apt_key is succeeded
@@ -53,7 +61,7 @@
 
     - name: Add Grafana repository [Debian/Ubuntu]
       apt_repository:
-        repo: deb https://packages.grafana.com/oss/deb stable main
+        repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://packages.grafana.com/oss/deb stable main"
         state: present
         update_cache: true
       register: _update_apt_cache
